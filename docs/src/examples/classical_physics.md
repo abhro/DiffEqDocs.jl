@@ -46,26 +46,26 @@ Plots.plot!(sol.t, t -> 2^(-t / t½), lw = 3, ls = :dash, label = "Analytical So
 Another classical example is the harmonic oscillator, given by:
 
 ```math
-\ddot{x} + \omega^2 x = 0
+\ddot{x} + ω^2 x = 0
 ```
 
 with the known analytical solution
 
 ```math
 \begin{align*}
-x(t) &= A\cos(\omega t - \phi) \\
-v(t) &= -A\omega\sin(\omega t - \phi),
+x(t) &= A\cos(ω t - φ) \\
+v(t) &= -Aω\sin(ω t - φ),
 \end{align*}
 ```
 
 where
 
 ```math
-A = \sqrt{c_1 + c_2} \qquad\text{and}\qquad \tan \phi = \frac{c_2}{c_1}
+A = \sqrt{c_1 + c_2} \qquad\text{and}\qquad \tan φ = \frac{c_2}{c_1}
 ```
 
 with ``c_1``, ``c_2`` constants determined by the initial conditions such that
-``c_1`` is the initial position and ``\omega c_2`` is the initial velocity.
+``c_1`` is the initial position and ``ω c_2`` is the initial velocity.
 
 Instead of transforming this to a system of ODEs to solve with `ODEProblem`,
 we can use `SecondOrderODEProblem` as follows.
@@ -112,7 +112,7 @@ Thus, if we want the first series to be `x`, we have to flip the order with `var
 
 #### Simple Pendulum
 
-We will start by solving the pendulum problem. In the physics class, we often solve this problem by small angle approximation, i.e. ``\sin(θ) \approx θ``, because otherwise, we get an elliptic integral which doesn't have an analytic solution. The linearized form is
+We will start by solving the pendulum problem. In the physics class, we often solve this problem by small angle approximation, i.e. ``\sin(θ) ≈ θ``, because otherwise, we get an elliptic integral which doesn't have an analytic solution. The linearized form is
 
 ```math
 \ddot{θ} + \frac{g}{L} θ = 0
@@ -161,8 +161,8 @@ sol = ODE.solve(prob, ODE.Tsit5())
 
 #Plot
 Plots.plot(
-    sol, linewidth = 2, title = "Simple Pendulum Problem", xaxis = "Time",
-    yaxis = "Height", label = ["\\theta" "d\\theta"]
+    sol, linewidth = 2, title = "Simple Pendulum Problem",
+    xaxis = "Time", yaxis = "Height", label = ["θ" "ω"],
 )
 ```
 
@@ -173,15 +173,14 @@ p = Plots.plot(
     sol, vars = (1, 2), xlims = (-9, 9), title = "Phase Space Plot",
     xaxis = "Angular position", yaxis = "Angular velocity", leg = false
 )
-function phase_plot(prob, u0, p, tspan = 2pi)
+function phase_plot(prob, u0, p, tspan = 2π)
     _prob = ODE.ODEProblem(prob.f, u0, (0.0, tspan))
     sol = ODE.solve(_prob, ODE.Vern9()) # Use Vern9 solver for higher accuracy
     return Plots.plot!(p, sol, idxs = (1, 2))
 end
-for i in (-4pi):(pi / 2):(4π)
-    for j in (-4pi):(pi / 2):(4π)
-        phase_plot(prob, [j, i], p)
-    end
+angle_range = (-4π):(π / 2):(4π)
+for i in angle_range, j in angle_range
+    phase_plot(prob, [j, i], p)
 end
 Plots.plot(p, xlims = (-9, 9))
 ```
@@ -192,15 +191,12 @@ A more complicated example is given by the double pendulum. The equations govern
 its motion are given by the following (taken from this [Stack Overflow question](https://mathematica.stackexchange.com/questions/40122/help-to-plot-poincar%C3%A9-section-for-double-pendulum))
 
 ```math
-\frac{d}{dt}
-\begin{pmatrix} \alpha \\ l_\alpha \\ \beta \\ l_\beta \end{pmatrix}
-=
-\begin{pmatrix}
-2\frac{l_\alpha - (1+\cos\beta)l_\beta}{3-\cos 2\beta} \\
--2\sin\alpha - \sin(\alpha + \beta) \\
-2\frac{-(1+\cos\beta)l_\alpha + (3+2\cos\beta)l_\beta}{3-\cos2\beta}\\
--\sin(\alpha+\beta) - 2\sin(\beta)\frac{(l_\alpha-l_\beta)l_\beta}{3-\cos2\beta} + 2\sin(2\beta)\frac{l_\alpha^2-2(1+\cos\beta)l_\alpha l_\beta + (3+2\cos\beta)l_\beta^2}{(3-\cos2\beta)^2}
-\end{pmatrix}
+\begin{align*}
+\frac{dα}{dt} & = 2 \frac{l_α - (1+\cos β)l_β}{3-\cos 2β} \\
+\frac{dl_α}{dt} & = -2\sin α - \sin(α + β) \\
+\frac{dβ}{dt} & = 2\frac{-(1+\cos β) l_α + (3+2\cos β)l_β}{3 - \cos 2β} \\
+\frac{dl_β}{dt} & = -\sin(α+β) - 2\sin(β) \frac{(l_α-l_β)l_β}{3-\cos 2β} + 2\sin(2β) \frac{l_α^2-2(1+\cos β)l_α l_β + (3 + 2 \cos β) l_β^2}{(3 - \cos 2β)^2}
+\end{align*}
 ```
 
 ```@example physics
@@ -209,7 +205,7 @@ import OrdinaryDiffEq as ODE, Plots
 
 #Constants and setup
 const m₁, m₂, L₁, L₂ = 1, 2, 1, 2
-initial = [0, π / 3, 0, 3pi / 5]
+initial = [0, π / 3, 0, 3π / 5]
 tspan = (0.0, 50.0)
 
 #Convenience function for transforming from polar to Cartesian coordinates
@@ -243,8 +239,9 @@ function double_pendulum(xdot, x, p, t)
             (2L₁ * (m₁ + m₂ * sΔ^2))
     )
     xdot[3] = ω₂
-    return xdot[4] = ((m₁ + m₂) * (L₁ * ω₁^2 + g * cos(θ₁)) + L₂ * m₂ * ω₂^2 * cΔ) * sΔ /
+    xdot[4] = ((m₁ + m₂) * (L₁ * ω₁^2 + g * cos(θ₁)) + L₂ * m₂ * ω₂^2 * cΔ) * sΔ /
         (L₂ * (m₁ + m₂ * sΔ^2))
+    return
 end
 
 #Pass to Solvers
@@ -276,21 +273,21 @@ tspan2 = (0.0, 500.0)
 #Define the problem
 function double_pendulum_hamiltonian(udot, u, p, t)
     α, lα, β, lβ = u
-    return udot .= [
+    udot .= [
         2(lα - (1 + cos(β))lβ) / (3 - cos(2β)),
         -2sin(α) - sin(α + β),
         2(-(1 + cos(β))lα + (3 + 2cos(β))lβ) / (3 - cos(2β)),
         -sin(α + β) - 2sin(β) * (((lα - lβ)lβ) / (3 - cos(2β))) +
             2sin(2β) * ((lα^2 - 2(1 + cos(β))lα * lβ + (3 + 2cos(β))lβ^2) / (3 - cos(2β))^2),
     ]
+    return
 end
 
 # Construct a ContinuousCallback
 condition(u, t, integrator) = u[1]
 affect!(integrator) = nothing
 cb = ODE.ContinuousCallback(
-    condition, affect!, nothing,
-    save_positions = (true, false)
+    condition, affect!, nothing, save_positions = (true, false)
 )
 
 # Construct Problem
@@ -316,7 +313,7 @@ p = Plots.scatter(sol2, idxs = (3, 4), leg = false, markersize = 3, msw = 0)
 for lβ in lβrange
     poincare_map(poincare, [0.01, 0.01, 0.01, lβ], p)
 end
-Plots.plot(p, xlabel = "\\beta", ylabel = "l_\\beta", ylims = (0, 0.03))
+Plots.plot(p, xlabel = "β", ylabel = "l_β", ylims = (0, 0.03))
 ```
 
 #### Hénon-Heiles System
@@ -325,15 +322,15 @@ The Hénon-Heiles potential occurs when non-linear motion of a star around a gal
 
 ```math
 \begin{align*}
-\frac{d^2x}{dt^2}&=-\frac{\partial V}{\partial x}\\
-\frac{d^2y}{dt^2}&=-\frac{\partial V}{\partial y}
+\frac{d^2x}{dt^2} &= -\frac{∂V}{∂x} \\
+\frac{d^2y}{dt^2} &= -\frac{∂V}{∂y}
 \end{align*}
 ```
 
 where
 
 ```math
-V(x,y) = \frac {1}{2} (x^2+y^2) + λ \left(x^2 y - \frac{y^3}{3}\right).
+V(x,y) = \frac{1}{2} (x^2+y^2) + λ \left(x^2 y - \frac{y^3}{3}\right).
 ```
 
 We pick ``λ=1`` in this case, so
@@ -381,7 +378,7 @@ sol = ODE.solve(prob, ODE.Vern9(), abstol = 1.0e-16, reltol = 1.0e-16);
 # Plot the orbit
 Plots.plot(
     sol, idxs = (1, 2), title = "The orbit of the Hénon-Heiles system",
-    xaxis = "x", yaxis = "y", leg = false
+    xaxis = "x", yaxis = "y", leg = false,
 )
 ```
 
@@ -420,9 +417,8 @@ To prevent energy drift, we can instead use a symplectic integrator. We can dire
 import OrdinaryDiffEqSymplecticRK as ODESymp # KahanLi8
 function HH_acceleration!(dv, v, u, p, t)
     x, y = u
-    dx, dy = dv
-    dv[1] = -x - 2x * y
-    dv[2] = y^2 - y - x^2
+    dv[1] = dx = -x - 2x * y
+    dv[2] = dy = y^2 - y - x^2
     return
 end
 initial_positions = [0.0, 0.1]
