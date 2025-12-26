@@ -156,7 +156,7 @@ sol = ODE.solve(prob, ODE.Tsit5())
 
 #Plot
 Plots.plot(sol, linewidth = 2, title = "Simple Pendulum Problem", xaxis = "Time",
-    yaxis = "Height", label = ["\\theta" "d\\theta"])
+    yaxis = "Height", label = ["\\theta" "\\omega"])
 ```
 
 So now we know that behaviour of the position versus time. However, it will be useful to us to look at the phase space of the pendulum, i.e., and representation of all possible states of the system in question (the pendulum) by looking at its velocity and position. Phase space analysis is ubiquitous in the analysis of dynamical systems, and thus we will provide a few facilities for it.
@@ -183,15 +183,16 @@ A more complicated example is given by the double pendulum. The equations govern
 its motion are given by the following (taken from this [Stack Overflow question](https://mathematica.stackexchange.com/questions/40122/help-to-plot-poincar%C3%A9-section-for-double-pendulum))
 
 ```math
-\frac{d}{dt}
-\begin{pmatrix} \alpha \\ l_\alpha \\ \beta \\ l_\beta \end{pmatrix}
-=
-\begin{pmatrix}
+\begin{align*}
+\frac{d\alpha}{dt} & =
 2\frac{l_\alpha - (1+\cos\beta)l_\beta}{3-\cos 2\beta} \\
+\frac{dl_\alpha}{dt} & =
 -2\sin\alpha - \sin(\alpha + \beta) \\
+\frac{d\beta}{dt} & =
 2\frac{-(1+\cos\beta)l_\alpha + (3+2\cos\beta)l_\beta}{3-\cos2\beta}\\
--\sin(\alpha+\beta) - 2\sin(\beta)\frac{(l_\alpha-l_\beta)l_\beta}{3-\cos2\beta} + 2\sin(2\beta)\frac{l_\alpha^2-2(1+\cos\beta)l_\alpha l_\beta + (3+2\cos\beta)l_\beta^2}{(3-\cos2\beta)^2}
-\end{pmatrix}
+\frac{dl_\beta}{dt} & =
+-\sin(\alpha+\beta) - 2\sin(\beta) \frac{(l_\alpha-l_\beta)l_\beta}{3-\cos2\beta} + 2\sin(2\beta) \frac{l_\alpha^2-2(1+\cos\beta)l_\alpha l_\beta + (3+2\cos\beta)l_\beta^2}{(3-\cos2\beta)^2}
+\end{align*}
 ```
 
 ```@example physics
