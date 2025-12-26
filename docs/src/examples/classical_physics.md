@@ -154,7 +154,7 @@ sol = ODE.solve(prob, ODE.Tsit5())
 
 #Plot
 Plots.plot(sol, linewidth = 2, title = "Simple Pendulum Problem", xaxis = "Time",
-    yaxis = "Height", label = ["\\theta" "d\\theta"])
+    yaxis = "Height", label = ["\\theta" "\\omega"])
 ```
 
 So now we know that behaviour of the position versus time. However, it will be useful to us to look at the phase space of the pendulum, i.e., and representation of all possible states of the system in question (the pendulum) by looking at its velocity and position. Phase space analysis is ubiquitous in the analysis of dynamical systems, and thus we will provide a few facilities for it.
@@ -216,15 +216,17 @@ end
 
 #Define the Problem
 function double_pendulum(xdot, x, p, t)
-    xdot[1] = x[2]
-    xdot[2] = -((g * (2 * m₁ + m₂) * sin(x[1]) +
-                 m₂ * (g * sin(x[1] - 2 * x[3]) +
-                  2 * (L₂ * x[4]^2 + L₁ * x[2]^2 * cos(x[1] - x[3])) * sin(x[1] - x[3]))) /
-                (2 * L₁ * (m₁ + m₂ - m₂ * cos(x[1] - x[3])^2)))
-    xdot[3] = x[4]
-    xdot[4] = (((m₁ + m₂) * (L₁ * x[2]^2 + g * cos(x[1])) +
-                L₂ * m₂ * x[4]^2 * cos(x[1] - x[3])) * sin(x[1] - x[3])) /
-              (L₂ * (m₁ + m₂ - m₂ * cos(x[1] - x[3])^2))
+    θ₁, ω₁, θ₂, ω₂ = x
+    M = m₁ + m₂
+    Δθ = θ₁ - θ₂
+    xdot[1] = ω₁
+    xdot[2] = -((g * (2m₁ + m₂) * sin(θ₁) +
+                 m₂ * g * sin(θ₁ - 2θ₂) +
+                 2m₂ * (L₂ * ω₂^2 + L₁ * ω₁^2 * cos(Δθ)) * sin(Δθ)) /
+                (2L₁ * (M - m₂ * cos(Δθ)^2)))
+    xdot[3] = ω₂
+    xdot[4] = (M * (L₁ * ω₁^2 + g * cos(θ₁)) + L₂ * m₂ * ω₂^2 * cos(Δθ)) * sin(Δθ) /
+              (L₂ * (M - m₂ * cos(Δθ)^2))
 end
 
 #Pass to Solvers
