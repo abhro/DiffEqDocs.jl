@@ -281,7 +281,7 @@ What you see here is called an excitatory postsynaptic potential (EPSP). It is t
 p = [35.0, 40.0, 0.3, -77.0, 55.0, -65.0, 1, 0, 0.01, 0, 20, 100]
 tspan = (0.0, 200)
 prob = DE.ODEProblem(HH!, u0, tspan, p)
-sol = DE.solve(prob);
+sol = DE.solve(prob)
 plot!(sol, vars = 1)
 ```
 

@@ -623,7 +623,7 @@ affect!(integrator) = DE.terminate!(integrator)
 cb = DE.ContinuousCallback(condition, affect!)
 sol = DE.solve(prob, DE.Tsit5(), callback = cb)
 import Plots: plot
-plot(sol);
+plot(sol)
 ```
 
 Note that this uses rootfinding to approximate the “exact” moment of the crossing.
