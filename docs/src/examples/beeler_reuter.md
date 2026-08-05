@@ -60,15 +60,15 @@ mutable struct BeelerReuterCpu
     t::Float64              # the last timestep time to calculate Δt
     diff_coef::Float64      # the diffusion-coefficient (coupling strength)
 
-    C::Array{Float32, 2}    # intracellular calcium concentration
-    M::Array{Float32, 2}    # sodium current activation gate (m)
-    H::Array{Float32, 2}    # sodium current inactivation gate (h)
-    J::Array{Float32, 2}    # sodium current slow inactivation gate (j)
-    D::Array{Float32, 2}    # calcium current activation gate (d)
-    F::Array{Float32, 2}    # calcium current inactivation gate (f)
-    XI::Array{Float32, 2}   # inward-rectifying potassium current (iK1)
+    C::Matrix{Float32}      # intracellular calcium concentration
+    M::Matrix{Float32}      # sodium current activation gate (m)
+    H::Matrix{Float32}      # sodium current inactivation gate (h)
+    J::Matrix{Float32}      # sodium current slow inactivation gate (j)
+    D::Matrix{Float32}      # calcium current activation gate (d)
+    F::Matrix{Float32}      # calcium current inactivation gate (f)
+    XI::Matrix{Float32}     # inward-rectifying potassium current (iK1)
 
-    Δu::Array{Float64, 2}   # place-holder for the Laplacian
+    Δu::Matrix{Float64}     # place-holder for the Laplacian
 
     function BeelerReuterCpu(u0, diff_coef)
         self = new()
@@ -97,7 +97,7 @@ end
 The finite-difference Laplacian is calculated in-place by a 5-point stencil. The Neumann boundary condition is enforced.
 
 !!! note
-    
+
     For more complex PDE discretizations, consider using [MethodOfLines.jl](https://docs.sciml.ai/MethodOfLines/stable/)
     which can automatically generate finite difference discretizations, or [SciMLOperators.jl](https://docs.sciml.ai/SciMLOperators/stable/)
     for defining matrix-free linear operators.
@@ -265,19 +265,17 @@ Here, every time step is called three times. We distinguish between two types of
 function update_gates_cpu(u, XI, M, H, J, D, F, C, Δt)
     let Δt = Float32(Δt)
         n1, n2 = size(u)
-        for j in 1:n2
-            for i in 1:n1
-                v = Float32(u[i, j])
+        for j in 1:n2, i in 1:n1
+            v = Float32(u[i, j])
 
-                XI[i, j] = update_XI_cpu(XI[i, j], v, Δt)
-                M[i, j] = update_M_cpu(M[i, j], v, Δt)
-                H[i, j] = update_H_cpu(H[i, j], v, Δt)
-                J[i, j] = update_J_cpu(J[i, j], v, Δt)
-                D[i, j] = update_D_cpu(D[i, j], v, Δt)
-                F[i, j] = update_F_cpu(F[i, j], v, Δt)
+            XI[i, j] = update_XI_cpu(XI[i, j], v, Δt)
+            M[i, j] = update_M_cpu(M[i, j], v, Δt)
+            H[i, j] = update_H_cpu(H[i, j], v, Δt)
+            J[i, j] = update_J_cpu(J[i, j], v, Δt)
+            D[i, j] = update_D_cpu(D[i, j], v, Δt)
+            F[i, j] = update_F_cpu(F[i, j], v, Δt)
 
-                C[i, j] = update_C_cpu(C[i, j], D[i, j], F[i, j], v, Δt)
-            end
+            C[i, j] = update_C_cpu(C[i, j], D[i, j], F[i, j], v, Δt)
         end
     end
 end
@@ -318,22 +316,20 @@ end
 function update_du_cpu(du, u, XI, M, H, J, D, F, C)
     n1, n2 = size(u)
 
-    for j in 1:n2
-        for i in 1:n1
-            v = Float32(u[i, j])
+    for j in 1:n2, i in 1:n1
+        v = Float32(u[i, j])
 
-            # calculating individual currents
-            iK1 = calc_iK1(v)
-            ix1 = calc_ix1(v, XI[i, j])
-            iNa = calc_iNa(v, M[i, j], H[i, j], J[i, j])
-            iCa = calc_iCa(v, D[i, j], F[i, j], C[i, j])
+        # calculating individual currents
+        iK1 = calc_iK1(v)
+        ix1 = calc_ix1(v, XI[i, j])
+        iNa = calc_iNa(v, M[i, j], H[i, j], J[i, j])
+        iCa = calc_iCa(v, D[i, j], F[i, j], C[i, j])
 
-            # total current
-            I_sum = iK1 + ix1 + iNa + iCa
+        # total current
+        I_sum = iK1 + ix1 + iNa + iCa
 
-            # the reaction part of the reaction-diffusion equation
-            du[i, j] = -I_sum / C_m
-        end
+        # the reaction part of the reaction-diffusion equation
+        du[i, j] = -I_sum / C_m
     end
 end
 ```
@@ -364,9 +360,9 @@ end
 Time to test! We need to define the starting transmembrane potential with the help of global constants **v0** and **v1**, which represent the resting and activated potentials.
 
 ```julia
-const N = 192;
-u0 = fill(v0, (N, N));
-u0[90:102, 90:102] .= v1;   # a small square in the middle of the domain
+const N = 192
+u0 = fill(v0, (N, N))
+u0[90:102, 90:102] .= v1    # a small square in the middle of the domain
 ```
 
 The initial condition is a small square in the middle of the domain.
@@ -381,14 +377,14 @@ Next, the problem is defined:
 ```julia
 import DifferentialEquations as DE, Sundials
 
-deriv_cpu = BeelerReuterCpu(u0, 1.0);
-prob = DE.ODEProblem(deriv_cpu, u0, (0.0, 50.0));
+deriv_cpu = BeelerReuterCpu(u0, 1.0)
+prob = DE.ODEProblem(deriv_cpu, u0, (0.0, 50.0))
 ```
 
 For stiff reaction-diffusion equations, `CVODE_BDF` from Sundial library is an excellent solver.
 
 ```julia
-@time sol = DE.solve(prob, Sundials.CVODE_BDF(linear_solver = :GMRES), saveat = 100.0);
+@time sol = DE.solve(prob, Sundials.CVODE_BDF(linear_solver = :GMRES), saveat = 100.0)
 ```
 
 ```julia
@@ -403,7 +399,7 @@ GPUs are great for embarrassingly parallel problems, but not so much for highly 
 
 It this section, we present a brief summary of how GPUs (specifically NVIDIA GPUs) work and how to program them using the Julia CUDA interface. The readers who are familiar with these basic concepts may skip this section.
 
-Let's start by looking at the hardware of a typical high-end GPU, GTX 1080. It has four Graphics Processing Clusters (equivalent to a discrete CPU), each harboring five Streaming Multiprocessor (similar to a CPU core). Each SM has 128 single-precision CUDA cores. Therefore, GTX 1080 has a total of 4 x 5 x 128 = 2560 CUDA cores. The maximum  theoretical throughput for a GTX 1080 is reported as 8.87 TFLOPS. This figure is calculated for a boost clock frequency of 1.733 MHz as 2 x 2560 x 1.733 MHz = 8.87 TFLOPS. The factor 2 is included because two single floating-point operations, a multiplication and an addition, can be done in a clock cycle as part of a fused-multiply-addition FMA operation. GTX 1080 also has 8192 MB of global memory accessible to all the cores (in addition to local and shared memory on each SM).
+Let's start by looking at the hardware of a typical high-end GPU, GTX 1080. It has four Graphics Processing Clusters (equivalent to a discrete CPU), each harboring five Streaming Multiprocessor (similar to a CPU core). Each SM has 128 single-precision CUDA cores. Therefore, GTX 1080 has a total of 4 × 5 × 128 = 2560 CUDA cores. The maximum  theoretical throughput for a GTX 1080 is reported as 8.87 TFLOPS. This figure is calculated for a boost clock frequency of 1.733 MHz as 2 × 2560 × 1.733 MHz = 8.87 TFLOPS. The factor 2 is included because two single floating-point operations, a multiplication and an addition, can be done in a clock cycle as part of a fused-multiply-addition FMA operation. GTX 1080 also has 8192 MB of global memory accessible to all the cores (in addition to local and shared memory on each SM).
 
 A typical CUDA application has the following flow:
 
@@ -677,9 +673,9 @@ Ready to test!
 ```julia
 import DifferentialEquations as DE, Sundials
 
-deriv_gpu = BeelerReuterGpu(u0, 1.0);
-prob = DE.ODEProblem(deriv_gpu, u0, (0.0, 50.0));
-@time sol = DE.solve(prob, Sundials.CVODE_BDF(linear_solver = :GMRES), saveat = 100.0);
+deriv_gpu = BeelerReuterGpu(u0, 1.0)
+prob = DE.ODEProblem(deriv_gpu, u0, (0.0, 50.0))
+@time sol = DE.solve(prob, Sundials.CVODE_BDF(linear_solver = :GMRES), saveat = 100.0)
 ```
 
 ```julia

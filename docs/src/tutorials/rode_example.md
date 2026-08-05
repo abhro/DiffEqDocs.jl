@@ -1,7 +1,7 @@
 # [Random Ordinary Differential Equations](@id rode_example)
 
 !!! note
-    
+
     This tutorial assumes you have read the [Ordinary Differential Equations tutorial](@ref ode_example).
 
 ## Example 1: Scalar RODEs
@@ -17,9 +17,7 @@ where ``f(u,p,t,W)=2u\sin(W)`` and ``W(t)`` is a Wiener process (Gaussian proces
 ```@example rode
 import StochasticDiffEq as SDE
 import Plots
-function f3(u, p, t, W)
-    2u * sin(W)
-end
+f3(u, p, t, W) = 2u * sin(W)
 u0 = 1.00
 tspan = (0.0, 5.0)
 prob = SDE.RODEProblem(f3, u0, tspan)

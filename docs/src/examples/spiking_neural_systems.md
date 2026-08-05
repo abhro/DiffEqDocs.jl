@@ -20,8 +20,8 @@ The LIF model has five parameters, `gL, EL, C, Vth, I` and we define it in the `
 
 ```@example spikingneural
 import DifferentialEquations as DE
-import DiffEqCallbacks as CB # PresetTimeCallback is no longer reexported by DifferentialEquations v8
-import ComponentArrays
+import DiffEqCallbacks: PresetTimeCallback # no longer reexported by DifferentialEquations v8
+import ComponentArrays: ComponentArray
 import Plots
 Plots.gr()
 
@@ -66,8 +66,8 @@ function reset!(integrator)
 end
 
 threshold = DE.ContinuousCallback(thr, reset!, nothing)
-current_step = CB.PresetTimeCallback([2, 15], integrator -> integrator.p.I += 150.0)
-cb = DE.CallbackSet(current_step, threshold)
+current_step = PresetTimeCallback([2, 15], integrator -> integrator.p.I += 150.0)
+callback = DE.CallbackSet(current_step, threshold)
 ```
 
 Our condition is `thr(u,t,integrator)` and the condition kicks in when `u > integrator.p.Vth`. Our effect of the condition is `reset!(integrator)`. It sets `u` back to the equilibrium potential `p.EL`. We then wrap both the condition and the effect into a `ContinuousCallback` called threshold. There is one more callback called `PresetTimeCallback` that is particularly useful. This one increases the input `p.I` at `t=2` and `t=15` by `150.0`. Both callbacks are then combined into a `CallbackSet`. We are almost done to simulate our system, we just need to put numbers on our initial voltage and parameters.
@@ -75,9 +75,9 @@ Our condition is `thr(u,t,integrator)` and the condition kicks in when `u > inte
 ```@example spikingneural
 u0 = -75
 tspan = (0.0, 40.0)
-p = ComponentArrays.ComponentArray(gL = 5.0, EL = -75.0, C = 50.0, Vth = -55.0, I = 0)
+p = ComponentArray(gL = 5.0, EL = -75.0, C = 50.0, Vth = -55.0, I = 0)
 
-prob = DE.ODEProblem(lif, u0, tspan, p, callback = cb)
+prob = DE.ODEProblem(lif, u0, tspan, p; callback)
 ```
 
 Our initial voltage is `u0 = - 75`, which will be the same as our equilibrium potential, so we start at a stable point. Then we define the timespan we want to simulate. The timescale of the LIF as it is defined conforms roughly to milliseconds. Then we define our parameters as `p = ComponentArray(gL = 5.0, EL = -75.0, C = 50.0, Vth = -55.0, I = 0)`. Finally, we wrap everything into a call to `ODEProblem`. Can't forget the `CallbackSet`. With that, our model is defined. Now we just need to solve it with a quick call to `solve`.
@@ -99,9 +99,9 @@ We see that the model is resting at `-75` while there is no input. At `t=2` the 
 [The Izhikevich model](https://www.izhikevich.org/publications/spikes.htm) is a two-dimensional model of neuronal spiking. It was derived from a bifurcation analysis of a cortical neuron. Because it is two-dimensional, it can generate much more complex spike dynamics than the LIF model. The kind of dynamics depends on the four parameters and the input `a, b, c, d, I = p`. All the concepts are the same as above, except for some minor changes to our function definitions to accommodate for the second dimension.
 
 ```@example spikingneural
-#Izhikevichch Model
+# Izhikevichch Model
 import DifferentialEquations as DE
-import DiffEqCallbacks as CB
+import DiffEqCallbacks: PresetTimeCallback
 import Plots
 
 function izh!(du, u, p, t)
@@ -115,9 +115,7 @@ end
 This is our Izhikevich model. There are two important changes here. First of all, note the additional input parameter `du`. This is a sequence of differences. `du[1]` corresponds to the voltage (the first dimension of the system) and `du[2]` corresponds to the second dimension. This second dimension is called `u` in the original Izhikevich work, and it makes the notation a little annoying. In this tutorial, we will generally stick to Julia and `DifferentialEquations` conventions as opposed to conventions of the specific models and `du` is commonly used. We will never define `du` ourselves outside the function, but the ODE solver will use it internally. The other change here is the `!` after our function name. This signifies that `du` will be preallocated before integration and then updated in-place, which saves a lot of allocation time. Now we just need our callbacks to take care of spikes and increase the input.
 
 ```@example spikingneural
-function thr(u, t, integrator)
-    integrator.u[1] >= 30
-end
+thr(u, t, integrator) = integrator.u[1] >= 30
 
 function reset!(integrator)
     integrator.u[1] = integrator.p[3]
@@ -125,8 +123,8 @@ function reset!(integrator)
 end
 
 threshold = DE.DiscreteCallback(thr, reset!)
-current_step = CB.PresetTimeCallback(50, integrator -> integrator.p[5] += 10)
-cb = DE.CallbackSet(current_step, threshold)
+current_step = PresetTimeCallback(50, integrator -> integrator.p[5] += 10)
+callback = DE.CallbackSet(current_step, threshold)
 ```
 
 One key feature of the Izhikevich model is that each spike increases our second dimension `u[2]` by a preset amount `p[4]`. Between spikes `u[2]` decays to a value that depends on `p[1]` and `p[2]` and the equilibrium potential `p[3]`. Otherwise, the code is not too different from the LIF model. We will again need to define our parameters, and we are ready to simulate.
@@ -136,11 +134,11 @@ p = [0.02, 0.2, -50, 2, 0]
 u0 = [-65, p[2] * -65]
 tspan = (0.0, 300)
 
-prob = DE.ODEProblem(izh!, u0, tspan, p, callback = cb)
+prob = DE.ODEProblem(izh!, u0, tspan, p; callback)
 ```
 
 ```@example spikingneural
-sol = DE.solve(prob);
+sol = DE.solve(prob)
 Plots.plot(sol, vars = 1)
 ```
 
@@ -157,8 +155,8 @@ p = [0.02, 0.2, -65, 8, 0]
 u0 = [-65, p[2] * -65]
 tspan = (0.0, 300)
 
-prob = DE.ODEProblem(izh!, u0, tspan, p, callback = cb)
-sol = DE.solve(prob);
+prob = DE.ODEProblem(izh!, u0, tspan, p; callback)
+sol = DE.solve(prob)
 Plots.plot(sol, vars = 1)
 ```
 
@@ -170,18 +168,18 @@ The Hodgkin-Huxley (HH) model is our first biophysically realistic model. This m
 
 ```@example spikingneural
 import DifferentialEquations as DE
-import DiffEqCallbacks as CB
+import DiffEqCallbacks: PresetTimeCallback
 import Plots
 
 # Potassium ion-channel rate functions
-alpha_n(v) = (0.02 * (v - 25.0)) / (1.0 - exp((-1.0 * (v - 25.0)) / 9.0))
+alpha_n(v) = (0.02 * (v - 25.0)) / (1.0 - exp(-(v - 25.0) / 9.0))
 beta_n(v) = (-0.002 * (v - 25.0)) / (1.0 - exp((v - 25.0) / 9.0))
 
 # Sodium ion-channel rate functions
-alpha_m(v) = (0.182 * (v + 35.0)) / (1.0 - exp((-1.0 * (v + 35.0)) / 9.0))
+alpha_m(v) = (0.182 * (v + 35.0)) / (1.0 - exp(-(v + 35.0) / 9.0))
 beta_m(v) = (-0.124 * (v + 35.0)) / (1.0 - exp((v + 35.0) / 9.0))
 
-alpha_h(v) = 0.25 * exp((-1.0 * (v + 90.0)) / 12.0)
+alpha_h(v) = 0.25 * exp(-(v + 90.0) / 12.0)
 beta_h(v) = (0.25 * exp((v + 62.0) / 6.0)) / exp((v + 90.0) / 12.0)
 
 function HH!(du, u, p, t)
@@ -201,7 +199,7 @@ We have three different types of ionic conductances. Potassium, sodium and the l
 The sodium current is not very different, but it has two gating variables, `m, h` instead of one. The leak conductance gL has no gating variables because it is not voltage gated. Let's move on to the parameters. If you want all the details on the HH model, you can find a great description [here](https://neuronaldynamics.epfl.ch/online/Ch2.S2.html).
 
 ```@example spikingneural
-current_step = CB.PresetTimeCallback(100, integrator -> integrator.p[8] += 1)
+current_step = PresetTimeCallback(100, integrator -> integrator.p[8] += 1)
 
 # n, m & h steady-states
 n_inf(v) = alpha_n(v) / (alpha_n(v) + beta_n(v))
@@ -218,7 +216,7 @@ prob = DE.ODEProblem(HH!, u0, tspan, p, callback = current_step)
 For the HH model, we need only one callback. The PresetTimeCallback that starts our input current. We don't need to reset the voltage when it reaches threshold because the HH model has its own repolarization mechanism. That is the potassium current, which activates at large voltages and makes the voltage more negative. The three functions `n_inf; m_inf; h_inf` help us find good initial values for the gating variables. Those functions tell us that the steady-state gating values should be for the initial voltage. The parameters were chosen in a way that the properties of the model roughly resemble that of a cortical pyramidal cell instead of the giant axon Hodgkin and Huxley were originally working on.
 
 ```@example spikingneural
-sol = DE.solve(prob);
+sol = DE.solve(prob)
 Plots.plot(sol, vars = 1)
 ```
 
@@ -254,11 +252,11 @@ function HH!(du, u, p, t)
 
     ISyn = gSyn(max_gSyn, tau, tf, t) * (v - ESyn)
 
-    du[1] = (-(gK * (n^4.0) * (v - EK)) - (gNa * (m^3.0) * h * (v - ENa)) -
+    du[1] = (-(gK * n^4 * (v - EK)) - (gNa * m^3 * h * (v - ENa)) -
              (gL * (v - EL)) + I - ISyn) / C
-    du[2] = (alpha_n(v) * (1.0 - n)) - (beta_n(v) * n)
-    du[3] = (alpha_m(v) * (1.0 - m)) - (beta_m(v) * m)
-    du[4] = (alpha_h(v) * (1.0 - h)) - (beta_h(v) * h)
+    du[2] = alpha_n(v) * (1.0 - n) - beta_n(v) * n
+    du[3] = alpha_m(v) * (1.0 - m) - beta_m(v) * m
+    du[4] = alpha_h(v) * (1.0 - h) - beta_h(v) * h
 end
 ```
 
@@ -268,7 +266,7 @@ end
 p = [35.0, 40.0, 0.3, -77.0, 55.0, -65.0, 1, 0, 0.008, 0, 20, 100]
 tspan = (0.0, 200)
 prob = DE.ODEProblem(HH!, u0, tspan, p)
-sol = DE.solve(prob);
+sol = DE.solve(prob)
 Plots.plot(sol, vars = 1)
 ```
 
@@ -278,7 +276,7 @@ What you see here is called an excitatory postsynaptic potential (EPSP). It is t
 p = [35.0, 40.0, 0.3, -77.0, 55.0, -65.0, 1, 0, 0.01, 0, 20, 100]
 tspan = (0.0, 200)
 prob = DE.ODEProblem(HH!, u0, tspan, p)
-sol = DE.solve(prob);
+sol = DE.solve(prob)
 Plots.plot!(sol, vars = 1)
 ```
 
@@ -293,11 +291,11 @@ function HH!(du, u, p, t)
     gK, gNa, gL, EK, ENa, EL, C, I, tau, tau_u, tau_R, u0, gmax, Esyn = p
     v, n, m, h, u, R, gsyn = u
 
-    du[1] = ((gK * (n^4.0) * (EK - v)) + (gNa * (m^3.0) * h * (ENa - v)) + (gL * (EL - v)) +
+    du[1] = ((gK * n^4 * (EK - v)) + (gNa * m^3 * h * (ENa - v)) + (gL * (EL - v)) +
              I + gsyn * (Esyn - v)) / C
-    du[2] = (alpha_n(v) * (1.0 - n)) - (beta_n(v) * n)
-    du[3] = (alpha_m(v) * (1.0 - m)) - (beta_m(v) * m)
-    du[4] = (alpha_h(v) * (1.0 - h)) - (beta_h(v) * h)
+    du[2] = alpha_n(v) * (1.0 - n) - beta_n(v) * n
+    du[3] = alpha_m(v) * (1.0 - m) - beta_m(v) * m
+    du[4] = alpha_h(v) * (1.0 - h) - beta_h(v) * h
 
     # Synaptic variables
     du[5] = -(u / tau_u)
@@ -311,13 +309,13 @@ function epsp!(integrator)
     integrator.u[6] -= integrator.u[5] * integrator.u[6]
 end
 
-epsp_ts = CB.PresetTimeCallback(100:100:500, epsp!)
+epsp_ts = PresetTimeCallback(100:100:500, epsp!)
 
 p = [35.0, 40.0, 0.3, -77.0, 55.0, -65.0, 1, 0, 30, 1000, 50, 0.5, 0.005, 0]
 u0 = [-60, n_inf(-60), m_inf(-60), h_inf(-60), 0.0, 1.0, 0.0]
 tspan = (0.0, 700)
 prob = DE.ODEProblem(HH!, u0, tspan, p, callback = epsp_ts)
-sol = DE.solve(prob);
+sol = DE.solve(prob)
 Plots.plot(sol, vars = 1)
 ```
 
@@ -334,13 +332,13 @@ Plots.plot(sol, vars = [5, 6])
 Because of the time courses at play here, this facilitation is frequency-dependent. If we increase the period between these events, facilitation does not occur.
 
 ```@example spikingneural
-epsp_ts = CB.PresetTimeCallback(100:1000:5100, epsp!)
+epsp_ts = PresetTimeCallback(100:1000:5100, epsp!)
 
 p = [35.0, 40.0, 0.3, -77.0, 55.0, -65.0, 1, 0, 30, 500, 50, 0.5, 0.005, 0]
 u0 = [-60, n_inf(-60), m_inf(-60), h_inf(-60), 0.0, 1.0, 0.0]
 tspan = (0.0, 5300)
 prob = DE.ODEProblem(HH!, u0, tspan, p, callback = epsp_ts)
-sol = DE.solve(prob);
+sol = DE.solve(prob)
 Plots.plot(sol, vars = 7)
 ```
 
@@ -351,13 +349,13 @@ Plots.plot(sol, vars = [5, 6])
 We can also change these time constants such that the dynamics show short-term depression instead of facilitation.
 
 ```@example spikingneural
-epsp_ts = CB.PresetTimeCallback(100:100:500, epsp!)
+epsp_ts = PresetTimeCallback(100:100:500, epsp!)
 
 p = [35.0, 40.0, 0.3, -77.0, 55.0, -65.0, 1, 0, 30, 100, 1000, 0.5, 0.005, 0]
 u0 = [-60, n_inf(-60), m_inf(-60), h_inf(-60), 0.0, 1.0, 0.0]
 tspan = (0.0, 700)
 prob = DE.ODEProblem(HH!, u0, tspan, p, callback = epsp_ts)
-sol = DE.solve(prob);
+sol = DE.solve(prob)
 Plots.plot(sol, vars = 7)
 ```
 

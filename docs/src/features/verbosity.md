@@ -22,7 +22,7 @@ prob = ODEProblem(lorenz!, u0, tspan)
 
 # Solve with detailed verbosity
 verbose = DEVerbosity(SciMLLogging.Detailed())
-sol = solve(prob, Tsit5(), verbose = verbose)
+sol = solve(prob, Tsit5(); verbose)
 ```
 
 ## Example Use Cases

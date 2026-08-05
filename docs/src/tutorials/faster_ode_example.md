@@ -1,7 +1,7 @@
 # [Code Optimization for Differential Equations](@id speed)
 
 !!! note
-    
+
     See [this FAQ](@ref faq_performance)
     for information on common pitfalls and how to improve performance.
 
@@ -79,7 +79,7 @@ nothing # hide
 The problem, of course, is that arrays are created every time our derivative
 function is called. This function is called multiple times per step and is thus
 the main source of memory usage. To fix this, we can use the in-place form to
-***make our code non-allocating***:
+**_make our code non-allocating_**:
 
 ```@example faster_ode
 function lorenz!(du, u, p, t)
@@ -95,7 +95,7 @@ When the in-place form is used, DifferentialEquations.jl takes a different
 internal route that minimizes the internal allocations as well.
 
 !!! note
-    
+
     Notice that nothing is returned. When in in-place form, the ODE solver ignores
     the return. Instead, make sure that the original `du` array is mutated instead
     of constructing a new array
@@ -173,7 +173,7 @@ and their compile time balloons. Thus, static arrays shouldn't be used if your
 system has more than ~20 variables. Additionally, only the native Julia
 algorithms can fully utilize static arrays.
 
-Let's ***optimize `lorenz` using static arrays***. Note that in this case, we
+Let's **_optimize `lorenz` using static arrays_**. Note that in this case, we
 want to use the out-of-place allocating form, but this time we want to output
 a static array:
 
@@ -376,7 +376,7 @@ In this tutorial, we will optimize the right-hand side definition of a PDE
 semi-discretization.
 
 !!! note
-    
+
     We highly recommend looking at the [Solving Large Stiff Equations](@ref stiff)
     tutorial for details on customizing DifferentialEquations.jl for more
     efficient large-scale stiff ODE solving. This section will only focus on the
@@ -460,7 +460,7 @@ Notice that changing `B` changed `A`. This is something to be careful of, but
 at the same time we want to use this since we want to modify the output `dr`.
 Additionally, the last statement is a purely element-wise operation, and thus
 we can make use of broadcast fusion there. Let's rewrite `basic_version!` to
-***avoid slicing allocations*** and to ***use broadcast fusion***:
+**_avoid slicing allocations_** and to **_use broadcast fusion_**:
 
 ```@example faster_ode3
 function gm2!(dr, r, p, t)
@@ -511,7 +511,7 @@ BT.@btime DE.solve(prob, DE.Tsit5());
 nothing # hide
 ```
 
-But our temporary variables are global variables. We need to either declare the caches as `const` or localize them. We can localize them by adding them to the parameters, `p`. It's easier for the compiler to reason about local variables than global variables. ***Localizing variables helps to ensure type stability***.
+But our temporary variables are global variables. We need to either declare the caches as `const` or localize them. We can localize them by adding them to the parameters, `p`. It's easier for the compiler to reason about local variables than global variables. **_Localizing variables helps to ensure type stability_**.
 
 ```@example faster_ode3
 p = (1.0, 1.0, 1.0, 10.0, 0.001, 100.0, Ayu, uAx, Du, Ayv, vAx, Dv) # a,α,ubar,β,D1,D2
@@ -686,7 +686,7 @@ multithreaded version.
 
 ### Optimizing Algorithm Choices
 
-The last thing to do is then ***optimize our algorithm choice***. We have been
+The last thing to do is then **_optimize our algorithm choice_**. We have been
 using `DE.Tsit5()` as our test algorithm, but in reality this problem is a stiff
 PDE discretization and thus one recommendation is to use `Sundials.CVODE_BDF()`. However,
 instead of using the default dense Jacobian, we should make use of the sparse
@@ -698,7 +698,7 @@ algorithms. `Sundials.CVODE_BDF` allows us to use a sparse Newton-Krylov solver 
 setting `linear_solver = :GMRES`.
 
 !!! note
-    
+
     The [Solving Large Stiff Equations](@ref stiff) tutorial goes through these
     details. This is simply to give a taste of how much optimization opportunity
     is left on the table!

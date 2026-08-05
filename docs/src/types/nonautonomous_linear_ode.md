@@ -10,7 +10,7 @@ on the solution and enhance the solving.
 These algorithms require a Non-autonomous linear ODE of the form:
 
 ```math
-u^\prime = A(u,p,t)u
+u' = A(u,p,t) u
 ```
 
 Where ``A`` is an AbstractSciMLOperator (see SciMLOperators.jl for more information) that is

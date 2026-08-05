@@ -75,17 +75,17 @@ the following conveniences are provided:
   - Everywhere in a tuple position where we only find an integer, this
     variable is plotted as a function of time.  For example, the list above
     is equivalent to:
-    
+
     ```julia
     idxs = [1, (1, 3), (4, 5)]
     ```
-    
+
     and
-    
+
     ```julia
     idxs = [1, 3, 4]
     ```
-    
+
     is the most concise way to plot the variables 1, 3, and 4 as a function
     of time.
 
@@ -93,25 +93,25 @@ the following conveniences are provided:
     and `4` are respectively equivalent to `[(2,3)]` and `[(0,4)]`.
   - A tuple containing one or several lists will be expanded by
     associating corresponding elements of the lists with each other:
-    
+
     ```julia
     idxs = ([1, 2, 3], [4, 5, 6])
     ```
-    
+
     is equivalent to
-    
+
     ```julia
     idxs = [(1, 4), (2, 5), (3, 6)]
     ```
-    
+
     and
-    
+
     ```julia
     idxs = (1, [2, 3, 4])
     ```
-    
+
     is equivalent to
-    
+
     ```julia
     idxs = [(1, 2), (1, 3), (1, 4)]
     ```
@@ -160,8 +160,11 @@ xy = Plots.plot(sol, plotdensity = 10000, idxs = (1, 2))
 xz = Plots.plot(sol, plotdensity = 10000, idxs = (1, 3))
 yz = Plots.plot(sol, plotdensity = 10000, idxs = (2, 3))
 xyz = Plots.plot(sol, plotdensity = 10000, idxs = (1, 2, 3))
-Plots.plot(Plots.plot(xyzt, xyz), Plots.plot(xy, xz, yz, layout = (1, 3), w = 1), layout = (
-    2, 1))
+Plots.plot(
+    Plots.plot(xyzt, xyz),
+    Plots.plot(xy, xz, yz, layout = (1, 3), w = 1),
+    layout = (2, 1),
+)
 ```
 
 An example using the functions:

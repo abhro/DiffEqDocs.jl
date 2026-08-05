@@ -1,7 +1,7 @@
 # Stochastic Differential Equations
 
 !!! note
-    
+
     This tutorial assumes you have read the [Ordinary Differential Equations tutorial](@ref ode_example).
 
 ## Example 1: Scalar SDEs
@@ -16,7 +16,7 @@ where ``f(u,p,t)=αu`` and ``g(u,p,t)=βu``. We know via Stochastic calculus tha
 solution to this equation is
 
 ```math
-u(t,Wₜ)=u₀\exp\left[\left(α-\frac{β^2}{2}\right)t+βWₜ\right].
+u(t,Wₜ) = u₀ \exp\left[\left(α-\frac{β^2}{2}\right)t+βWₜ\right].
 ```
 
 To solve this numerically, we define a stochastic problem type using `SDEProblem` by specifying `f(u, p, t)`, `g(u, p, t)`, and the initial condition:
@@ -37,7 +37,7 @@ The `solve` interface is then the same as ODEs. Here, we will use the classic
 Euler-Maruyama algorithm `EM` and plot the solution:
 
 ```@example sde
-sol = SDE.solve(prob, SDE.EM(), dt = dt);
+sol = SDE.solve(prob, SDE.EM(), dt = dt)
 nothing # hide
 ```
 
@@ -56,7 +56,7 @@ to test convergence of new methods being developed. To setup our problem, we def
 `u_analytic(u₀, p, t, W)` and pass it to the `SDEFunction` as:
 
 ```@example sde
-u_analytic(u₀, p, t, W) = u₀ * exp((α - (β^2) / 2) * t + β * W)
+u_analytic(u₀, p, t, W) = u₀ * exp((α - β^2 / 2) * t + β * W)
 ff = SDE.SDEFunction(f, g, analytic = u_analytic)
 prob = SDE.SDEProblem(ff, u₀, (0.0, 1.0))
 ```
@@ -64,7 +64,7 @@ prob = SDE.SDEProblem(ff, u₀, (0.0, 1.0))
 We can now compare the `SDE.EM()` solution with the analytic one:
 
 ```@example sde
-sol = SDE.solve(prob, SDE.EM(), dt = dt);
+sol = SDE.solve(prob, SDE.EM(); dt)
 nothing # hide
 ```
 
@@ -77,7 +77,7 @@ the higher order methods are adaptive. Let's first switch off adaptivity and
 compare the numerical and analytic solutions :
 
 ```@example sde
-sol = SDE.solve(prob, SDE.SRIW1(), dt = dt, adaptive = false);
+sol = SDE.solve(prob, SDE.SRIW1(); dt, adaptive = false)
 nothing # hide
 ```
 
@@ -89,7 +89,7 @@ Now, let's allow the solver to automatically determine a starting `dt`. This est
 at the beginning is conservative (small) to ensure accuracy.
 
 ```@example sde
-sol = SDE.solve(prob, SDE.SRIW1());
+sol = SDE.solve(prob, SDE.SRIW1())
 nothing # hide
 ```
 
@@ -100,7 +100,7 @@ Plots.plot(sol, plot_analytic = true)
 We can instead start the method with a larger `dt` by passing it to `solve`:
 
 ```@example sde
-sol = SDE.solve(prob, SDE.SRIW1(), dt = dt);
+sol = SDE.solve(prob, SDE.SRIW1(); dt)
 nothing # hide
 ```
 
@@ -125,15 +125,15 @@ are added via `addprocs()`, but we can change this to use multithreading via
 `SDE.EnsembleThreads()`. Together, this looks like:
 
 ```@example sde
-sol = SDE.solve(ensembleprob, SDE.EnsembleThreads(), trajectories = 1000);
+sol = SDE.solve(ensembleprob, SDE.EnsembleThreads(), trajectories = 1000)
 @info "Ensemble solution computed with $(length(sol.u)) trajectories" # hide
 nothing # hide
 ```
 
 !!! warning
-    
+
     If you use a custom noise process, you might need to specify it in a custom `prob_func`
-    in the EnsembleProblem constructor, as each trajectory needs its own noise process.
+    in the `EnsembleProblem` constructor, as each trajectory needs its own noise process.
 
 Many more controls are defined at the [Ensemble simulations page](@ref ensemble),
 including analysis tools.
@@ -188,7 +188,7 @@ function g!(du, u, p, t)  # It actually represents a diagonal matrix [3.0 0 0; 0
 end
 
 prob_sde_lorenz = SDE.SDEProblem(f!, g!, [1.0, 0.0, 0.0], (0.0, 10.0))
-sol = SDE.solve(prob_sde_lorenz);
+sol = SDE.solve(prob_sde_lorenz)
 nothing # hide
 ```
 
@@ -228,7 +228,7 @@ u0 = rand(4, 2)
 
 W = SDE.WienerProcess(0.0, 0.0, 0.0)
 prob = SDE.SDEProblem(f!, g!, u0, (0.0, 1.0), noise = W)
-sol = SDE.solve(prob, SDE.SRIW1());
+sol = SDE.solve(prob, SDE.SRIW1())
 nothing # hide
 ```
 
@@ -280,7 +280,7 @@ meaning that for example `du[1,1]` and `du[2,1]` correspond to stochastic change
 the same random number in the first and second SDEs.
 
 !!! note
-    
+
     This problem can only be solved my SDE methods which are compatible with non-diagonal
     noise. This is discussed [in the SDE solvers page](@ref sde_solve).
 

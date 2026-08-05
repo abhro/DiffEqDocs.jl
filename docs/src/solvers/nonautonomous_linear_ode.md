@@ -3,7 +3,7 @@
 Non-autonomous linear ODE solvers focus on equations in the general form of
 
 ```math
-u^\prime = A(u,p,t)u
+u' = A(u,p,t)u
 ```
 
 and utilize the Lie group structure of the solution to accelerate the numerical
@@ -11,19 +11,19 @@ methods and capture certain properties in the solution process. One common simpl
 is for solvers to require state-independent operators, which implies the form:
 
 ```math
-u^\prime = A(t)u
+u' = A(t)u
 ```
 
 Another type of solver is needed when the operators are state-dependent, i.e.
 
 ```math
-u^\prime = A(u)u
+u' = A(u)u
 ```
 
 Others specifically require linearity, i.e.
 
 ```math
-u^\prime = Au
+u' = Au
 ```
 
 where ``A`` is a constant operator.
@@ -32,8 +32,8 @@ where ``A`` is a constant operator.
 
 The solvers on this page are distributed across the packages below. Add the package(s) you need to your environment.
 
-| Package | Methods | Good for |
-|---|---|---|
+| Package                | Methods | Good for |
+| ---------------------- | ------- | -------- |
 | `OrdinaryDiffEqLinear` | Magnus, Lie-group, matrix-exponential methods | Linear time-dependent ODEs; matrix-exponential propagation. |
 
 
@@ -77,10 +77,10 @@ Options:
 
   - `krylov` - symbol. One of
     
-      + :off (default) - cache the operator beforehand. Requires `Matrix(A)` method
-        defined for the operator `A`.
-      + :simple - uses simple Krylov approximations with fixed subspace size `m`.
-      + :adaptive - uses adaptive Krylov approximations with internal timestepping.
+    + :off (default) - cache the operator beforehand. Requires `Matrix(A)` method
+      defined for the operator `A`.
+    + :simple - uses simple Krylov approximations with fixed subspace size `m`.
+    + :adaptive - uses adaptive Krylov approximations with internal timestepping.
 
   - `m` - integer, default: `10`. Controls the size of Krylov subspace if
     `krylov=:simple`, and the initial subspace size if `krylov=:adaptive`.
@@ -91,9 +91,9 @@ Options:
 ```@example linear_ode
 import DifferentialEquations as DE
 import OrdinaryDiffEqLinear as ODELinear   # LinearExponential, Magnus*, LieRK4, ...
-import SciMLOperators
+import SciMLOperators: MatrixOperator
 _A = [2 -1; -3 -5] / 5
-A = SciMLOperators.MatrixOperator(_A)
+A = MatrixOperator(_A)
 prob = DE.ODEProblem(A, [1.0, -1.0], (1.0, 6.0))
 sol = DE.solve(prob, ODELinear.LinearExponential())
 ```
@@ -128,7 +128,7 @@ function update_func(A, u, p, t)
     A[1, 2] = -sin(t)
     A[2, 2] = cos(t)
 end
-A = SciMLOperators.MatrixOperator(ones(2, 2), update_func! = update_func)
+A = MatrixOperator(ones(2, 2), update_func! = update_func)
 prob = DE.ODEProblem(A, ones(2), (1.0, 6.0))
 sol = DE.solve(prob, ODELinear.MagnusGL6(), dt = 1 / 10)
 ```
@@ -158,7 +158,7 @@ function update_func(A, u, p, t)
     A[1, 2] = -1
     A[2, 2] = 0
 end
-A = SciMLOperators.MatrixOperator(ones(2, 2), update_func! = update_func)
+A = MatrixOperator(ones(2, 2), update_func! = update_func)
 prob = DE.ODEProblem(A, ones(2), (0, 30.0))
 sol = DE.solve(prob, ODELinear.LieRK4(), dt = 1 / 4)
 ```
@@ -177,7 +177,7 @@ function update_func(A, u, p, t)
     A[1, 2] = -2 * (1 - cos(u[2]) - u[2] * sin(u[2]))
     A[2, 2] = 0
 end
-A = SciMLOperators.MatrixOperator(ones(2, 2), update_func! = update_func)
+A = MatrixOperator(ones(2, 2), update_func! = update_func)
 prob = DE.ODEProblem(A, ones(2), (30, 150.0))
 sol = DE.solve(prob, ODELinear.MagnusAdapt4())
 ```

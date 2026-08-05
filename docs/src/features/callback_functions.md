@@ -78,7 +78,7 @@ a negative coefficient:
 
 ```@example callback1
 import DifferentialEquations as DE
-import DiffEqCallbacks as CB # PresetTimeCallback is no longer reexported by DifferentialEquations v8
+import DiffEqCallbacks: PresetTimeCallback # no longer reexported by DifferentialEquations v8
 function f(du, u, p, t)
     du[1] = -u[1]
 end
@@ -86,8 +86,8 @@ u0 = [10.0]
 const V = 1
 prob = DE.ODEProblem(f, u0, (0.0, 10.0))
 sol = DE.solve(prob, DE.Tsit5())
-import Plots;
-Plots.plot(sol);
+import Plots
+Plots.plot(sol)
 ```
 
 Now assume we wish to give the patient a dose of 10 at time `t==4`. For this,
@@ -155,7 +155,7 @@ could do the following:
 ```@example callback1
 dosetimes = [4.0, 8.0]
 affect!(integrator) = integrator.u[1] += 10
-cb = CB.PresetTimeCallback(dosetimes, affect!)
+cb = PresetTimeCallback(dosetimes, affect!)
 sol = DE.solve(prob, DE.Tsit5(), callback = cb)
 Plots.plot(sol)
 ```
@@ -259,9 +259,7 @@ implement in `affect!`.
 Since the effect is supposed to occur every timestep, we use the trivial condition:
 
 ```@example callback3
-condition = function (u, t, integrator)
-    true
-end
+condition = (u, t, integrator) -> true
 ```
 
 which always returns true. For our effect we will overload the call on a type.
@@ -290,7 +288,7 @@ function AutoAbstol(save = true; init_curmax = 1e-6)
     affect! = AutoAbstolAffect(init_curmax)
     condition = (u, t, integrator) -> true
     save_positions = (save, false)
-    DE.DiscreteCallback(condition, affect!, save_positions = save_positions)
+    DE.DiscreteCallback(condition, affect!; save_positions)
 end
 ```
 
@@ -309,9 +307,7 @@ interface rather than the solve interface, we can step through one by one
 to watch the absolute tolerance increase:
 
 ```@example callback3
-function g(u, p, t)
-    -u[1]
-end
+g(u, p, t) = -u[1]
 u0 = 10.0
 const V = 1
 prob = DE.ODEProblem(g, u0, (0.0, 10.0))
@@ -384,8 +380,8 @@ tspan = (0.0, 15.0)
 p = 9.8
 prob = DE.ODEProblem(f, u0, tspan, p)
 sol = DE.solve(prob, DE.Tsit5(), callback = cb)
-import Plots;
-Plots.plot(sol);
+import Plots
+Plots.plot(sol)
 ```
 
 As you can see from the resulting image, DifferentialEquations.jl is smart enough
@@ -616,8 +612,8 @@ condition(u, t, integrator) = u[2]
 affect!(integrator) = DE.terminate!(integrator)
 cb = DE.ContinuousCallback(condition, affect!)
 sol = DE.solve(prob, DE.Tsit5(), callback = cb)
-import Plots;
-Plots.plot(sol);
+import Plots
+Plots.plot(sol)
 ```
 
 Note that this uses rootfinding to approximate the “exact” moment of the crossing.
@@ -719,7 +715,7 @@ and plot them directly:
 
 ```@example callback5
 import Plots
-Plots.plot(sol.t, map((x) -> length(x), sol[:]), lw = 3,
+Plots.plot(sol.t, map(length, sol[:]), lw = 3,
     ylabel = "Number of Cells", xlabel = "Time")
 ```
 
@@ -728,7 +724,7 @@ plot of the concentration of cell 1 over time. This is done with the command:
 
 ```@example callback5
 ts = range(0, stop = 10, length = 100)
-Plots.plot(ts, map((x) -> x[1], sol.(ts)), lw = 3,
+Plots.plot(ts, map(first, sol.(ts)), lw = 3,
     ylabel = "Amount of X in Cell 1", xlabel = "Time")
 ```
 
