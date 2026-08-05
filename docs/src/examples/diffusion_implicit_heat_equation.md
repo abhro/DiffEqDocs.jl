@@ -3,7 +3,7 @@
 In this tutorial, we'll be solving the heat equation:
 
 ```math
-∂_t T = α ∇²T + β \sin(γ z)
+\frac{∂T}{∂t} = α ∇²T + β \sin(γ z)
 ```
 
 with boundary conditions: ``∇T(z=a) = ∇T_\text{bottom}`` and ``T(z=b) = T_\text{top}``. We'll solve these equations numerically using Finite Difference Method on cell faces. The same exercise could easily be done on cell centers.
@@ -23,7 +23,7 @@ import SciMLBase, SciMLOperators
 Next, we'll define some global problem parameters:
 
 ```@example diffusionimplicit
-a, b, n = 0, 1, 10               # zmin, zmax, number of cells
+a, b, n = 0, 1, 10              # zmin, zmax, number of cells
 n̂_min, n̂_max = -1, 1            # Outward facing unit vectors
 α = 100;                        # thermal diffusivity, larger means more stiff
 β, γ = 10000, π;                # source term coefficients
@@ -32,11 +32,12 @@ N_t = 10;                       # number of timesteps to take
 FT = Float64;                   # float type
 Δz = FT(b - a) / FT(n)
 Δz² = Δz^2;
-∇²_op = [1 / Δz², -2 / Δz², 1 / Δz²]; # interior Laplacian operator
+∇²_op = [1, -2, 1] ./ Δz²;      # interior Laplacian operator
 ∇T_bottom = 10;                 # Temperature gradient at the top
 T_top = 1;                      # Temperature at the bottom
 S(z) = β * sin(γ * z)               # source term, (sin for easy integration)
 zf = range(a, b, length = n + 1);   # coordinates on cell faces
+nothing # hide
 ```
 
 ## Derivation of analytic solution
@@ -115,8 +116,8 @@ the Dirichlet boundary stencil & source:
 
 ```math
 \begin{align*}
-∂_t T &= α \frac{T[i-1]+T[b]-2 T[i]}{Δz²} + S \\
-∂_t T &= α \frac{T[i-1]-2 T[i]}{Δz²} + S + α \frac{T[b]}{Δz²}
+\frac{∂T}{∂t} &= α \frac{T[i-1]+T[b]-2 T[i]}{Δz²} + S \\
+\frac{∂T}{∂t} &= α \frac{T[i-1]-2 T[i]}{Δz²} + S + α \frac{T[b]}{Δz²}
 \end{align*}
 ```
 
@@ -124,8 +125,8 @@ and Neumann boundary stencil & source:
 
 ```math
 \begin{align*}
-∇T_\text{bottom} n̂ = \frac{T[g] - T[i]}{2Δz}, \qquad    n̂ = [-1,1] ∈ [z_\text{min},z_\text{max}] \\
-T[i] + 2 Δz ∇T_\text{bottom} n̂ = T[g] \\
+∇T_\text{bottom} n̂ &= \frac{T[g] - T[i]}{2Δz}, &    n̂ = [-1,1] ∈ [z_\text{min},z_\text{max}] \\
+T[i] + 2 Δz ∇T_\text{bottom} n̂ &= T[g] \\
 ∂_t T &= α \frac{\frac{(T[i] + 2 Δz ∇T_\text{bottom} n̂) - T[b]}{Δz} - \frac{T[b] - T[i]}{Δz}}{Δz} + S \\
 ∂_t T &= α \frac{\frac{T[i] - T[b]}{Δz} - \frac{T[b] - T[i]}{Δz}}{Δz} + S + α 2 Δz \frac{∇T_\text{bottom}}{Δz²} \\
 ∂_t T &= α \frac{2 T[i] - 2 T[b]}{Δz²} + S + 2α \frac{∇T_\text{bottom} n̂}{Δz}
@@ -162,6 +163,7 @@ Here, we'll compute the boundary source ``\left(\frac{α T[b]}{Δz²}\right)``
 AT_b = zeros(FT, n + 1);
 AT_b[1] = α * 2 / Δz * ∇T_bottom * n̂_min;
 AT_b[end - 1] = α * T_top / Δz²;
+nothing # hide
 ```
 
 ## Set initial condition

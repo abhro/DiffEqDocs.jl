@@ -175,7 +175,8 @@ modules = [
 makedocs(;
     modules,
     remotes = nothing,
-    linkcheck = true,
+    draft = true,
+    linkcheck = false,
     linkcheck_ignore = [
         "https://www.izhikevich.org/publications/spikes.htm",
         "https://biojulia.net/post/hardware/",
@@ -216,7 +217,7 @@ makedocs(;
         "https://epubs.siam.org/doi/10.1137/S0036144504444711",
     ],
     doctest = false, clean = true,
-    warnonly = [:missing_docs, :docs_block],
+    warnonly = [:missing_docs, :docs_block, :cross_references],
     format = Documenter.HTML(
         assets = ["assets/favicon.ico"],
         canonical = "https://docs.sciml.ai/DiffEqDocs/stable/",

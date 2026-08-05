@@ -37,7 +37,7 @@ Thus, the function for this model is given by:
 
 ```@example dde
 import DelayDiffEq as DDE, DifferentialEquations as DE
-import OrdinaryDiffEqLowOrderRK as ODELow # RK4 is no longer reexported by DifferentialEquations v8
+import OrdinaryDiffEqLowOrderRK: RK4
 function bc_model(du, u, h, p, t)
     p0, q0, v0, d0, p1, q1, v1, d1, d2, beta0, beta1, tau = p
     hist3 = h(p, t - tau)[3]
@@ -209,7 +209,7 @@ from above with residual control:
 
 ```@example dde
 prob = DDE.DDEProblem(bc_model, u0, h, tspan)
-alg = DDE.MethodOfSteps(ODELow.RK4())
+alg = DDE.MethodOfSteps(RK4())
 sol = DDE.solve(prob, alg);
 nothing # hide
 ```
