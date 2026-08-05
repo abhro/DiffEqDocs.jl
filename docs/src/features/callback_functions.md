@@ -78,7 +78,6 @@ a negative coefficient:
 
 ```@example callback1
 import DifferentialEquations as DE
-import SciMLBase
 import DiffEqCallbacks: PresetTimeCallback # no longer reexported by DifferentialEquations v8
 function f(du, u, p, t)
     du[1] = -u[1]
@@ -624,7 +623,7 @@ affect!(integrator) = DE.terminate!(integrator)
 cb = DE.ContinuousCallback(condition, affect!)
 sol = DE.solve(prob, DE.Tsit5(), callback = cb)
 import Plots: plot
-plot(sol);
+plot(sol)
 ```
 
 Note that this uses rootfinding to approximate the “exact” moment of the crossing.
