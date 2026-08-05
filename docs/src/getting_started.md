@@ -23,12 +23,12 @@ In this example, we will solve the equation
 \frac{du}{dt} = f(u,p,t)
 ```
 
-on the time interval ``t\in[0,1]`` where ``f(u,p,t)=αu``. Here, ``u`` is the
+on the time interval ``t ∈ [0,1]`` where ``f(u,p,t)=αu``. Here, ``u`` is the
 current state variable, ``p`` is our parameter variable (containing things like
 a reaction rate or the constant of gravity), and ``t`` is the current time.
 
 (In our example, we know by calculus that the solution to this equation is
-``u(t)=u₀\exp(αt)``, but we will use DifferentialEquations.jl to solve this
+``u(t) = u₀\exp(αt)``, but we will use DifferentialEquations.jl to solve this
 problem *numerically*, which is essential for problems where a symbolic solution
 is not known.)
 
@@ -199,16 +199,16 @@ In DifferentialEquations.jl, some good “go-to” choices for ODEs are:
     OrdinaryDiffEq, so a `using OrdinaryDiffEq` plus the right
     `using OrdinaryDiffEqXxx` will give you everything):
 
-    | Solver(s)                                  | Sublibrary                  |
-    |--------------------------------------------|-----------------------------|
-    | `BS3`, `RK4`, `Heun`, `Euler`, ...         | `OrdinaryDiffEqLowOrderRK`  |
-    | `Rodas4`, `Rodas5`, `ROS3P`, all Rosenbrock except `Rosenbrock23` / `Rodas5P` | `OrdinaryDiffEqRosenbrock` |
-    | `KenCarp3`, `KenCarp4`, `TRBDF2`, `Kvaerno*`, `ImplicitEuler`, ... | `OrdinaryDiffEqSDIRK` |
-    | `RadauIIA3`, `RadauIIA5`, `RadauIIA9`      | `OrdinaryDiffEqFIRK`        |
+    | Solver(s)                                                                     | Sublibrary                   |
+    | :---------------------------------------------------------------------------- | :--------------------------- |
+    | `BS3`, `RK4`, `Heun`, `Euler`, ...                                            | `OrdinaryDiffEqLowOrderRK`   |
+    | `Rodas4`, `Rodas5`, `ROS3P`, all Rosenbrock except `Rosenbrock23` / `Rodas5P` | `OrdinaryDiffEqRosenbrock`   |
+    | `KenCarp3`, `KenCarp4`, `TRBDF2`, `Kvaerno*`, `ImplicitEuler`, ...            | `OrdinaryDiffEqSDIRK`        |
+    | `RadauIIA3`, `RadauIIA5`, `RadauIIA9`                                         | `OrdinaryDiffEqFIRK`         |
     | `QNDF`, `QBDF`, `ABDF2`, `MEBDF2`, `DFBDF`, `DABDF2`, `DImplicitEuler`, `IMEXEuler`, `SBDF*` | `OrdinaryDiffEqBDF` |
-    | `DPRKN*`, `Nystrom*`, `ERKN*`              | `OrdinaryDiffEqRKN`         |
-    | `KahanLi*`, `McAte*`, `VelocityVerlet`, `SymplecticEuler`, ... | `OrdinaryDiffEqSymplecticRK` |
-    | `LinearExponential`, `Magnus*`, `LieRK4`, `RKMK*` | `OrdinaryDiffEqLinear`      |
+    | `DPRKN*`, `Nystrom*`, `ERKN*`                                                 | `OrdinaryDiffEqRKN`          |
+    | `KahanLi*`, `McAte*`, `VelocityVerlet`, `SymplecticEuler`, ...                | `OrdinaryDiffEqSymplecticRK` |
+    | `LinearExponential`, `Magnus*`, `LieRK4`, `RKMK*`                             | `OrdinaryDiffEqLinear`       |
 
 For a comprehensive list of the available algorithms and detailed recommendations,
 [please see the solver documentation](@ref ode_solve). Every problem
@@ -412,10 +412,10 @@ for differential equation analysis which also achieves high performance.
 Parameterized functions can also be used for building **nonhomogeneous ordinary differential equations** (these are also referred to as ODEs with **nonzero right-hand sides**). They are frequently used as models for dynamical systems with external (in general time-varying) **inputs**. As an example, consider a [model of a pendulum](https://en.wikipedia.org/wiki/Pendulum_(mathematics)) consisting of a slender rod of length `l` and mass `m`:
 
 ```math
-\begin{aligned}
-\frac{\mathrm{d}\theta(t)}{\mathrm{d}t} &= \omega(t)\\
-\frac{\mathrm{d}\omega(t)}{\mathrm{d}t} &= - \frac{3}{2}\frac{g}{l}\sin\theta(t) + \frac{3}{ml^2}M(t),
-\end{aligned}
+\begin{align*}
+\frac{dθ(t)}{dt} &= ω(t) \\
+\frac{dω(t)}{dt} &= - \frac{3}{2} \frac{g}{l} \sin θ(t) + \frac{3}{ml^2} M(t),
+\end{align*}
 ```
 
 where `θ` and `ω` are the angular deviation of the pendulum from the vertical (hanging) orientation and the angular rate, respectively, `M` is an external torque (developed, say, by a wind or a motor), and finally, `g` stands for gravitational acceleration.
@@ -429,8 +429,10 @@ m = 1.0                             # mass [kg]
 g = 9.81                            # gravitational acceleration [m/s²]
 
 function pendulum!(du, u, p, t)
-    du[1] = u[2]                    # θ'(t) = ω(t)
-    du[2] = -3g / (2l) * sin(u[1]) + 3 / (m * l^2) * p(t) # ω'(t) = -3g/(2l) sin θ(t) + 3/(ml^2)M(t)
+    θ, ω = u
+    m, l, M = p
+    du[1] = ω
+    du[2] = -3g / 2l * sin(θ) + 3 / (m * l^2) * M(t)
     return
 end
 
@@ -439,9 +441,9 @@ end
 u₀ = [θ₀, ω₀]                       # initial state vector
 tspan = (0.0, 10.0)                 # time interval
 
-M = t -> 0.1sin(t)                  # external torque [Nm]
+M = t -> 0.1sin(t)                  # external torque [N⋅m]
 
-prob = DE.ODEProblem(pendulum!, u₀, tspan, M)
+prob = DE.ODEProblem(pendulum!, u₀, tspan, (m, l, M))
 sol = DE.solve(prob)
 
 plot(
